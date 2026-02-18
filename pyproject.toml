@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "app-role-assignment-cli"
+version = "0.1.0"
+description = "A simple CLI tool to assign AppRole to all members of a given Group in Microsoft Entra ID"
+authors = ["Stefano Messina <stefano.messina@newglobe.education>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+msgraph-sdk = "^1.54.0"
+boto3 = "^1.42.50"
+click = "^8.3.1"
+azure-identity = "^1.25.2"
+
+[tool.poetry.scripts]
+app-role = "app_role_assignment_cli.main:cli"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
