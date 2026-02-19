@@ -8,11 +8,11 @@ from app_role_assignment_cli.exceptions import AppRoleAssignmentBaseException
 logger = logging.getLogger(__name__)
 
 
-class MSGraphRequestHandlerError(AppRoleAssignmentBaseException):
+class MSGraphAPIRequestHandlerError(AppRoleAssignmentBaseException):
     pass
 
 
-class MSGraphRequestHandler:
+class MSGraphAPIRequestHandler:
     def __init__(self, api: MSGraphAPIWrapper):
         self.api = api
 
@@ -20,7 +20,7 @@ class MSGraphRequestHandler:
         try:
             _group = await self.api.get_group(group_display_name)
         except Exception as e:
-            raise MSGraphRequestHandlerError(f'Could not handle the GET Group request. Occurred {e}')
+            raise MSGraphAPIRequestHandlerError(f'Could not handle the GET Group request. Occurred {e}')
         else:
             if _group is not None:
                 return _group.id
@@ -29,7 +29,7 @@ class MSGraphRequestHandler:
         try:
             _application = await self.api.get_application(application_display_name)
         except Exception as e:
-            raise MSGraphRequestHandlerError(f'Could not handle the GET Application request. Occurred {e}')
+            raise MSGraphAPIRequestHandlerError(f'Could not handle the GET Application request. Occurred {e}')
         else:
             if _application is not None:
                 return _application
@@ -38,7 +38,7 @@ class MSGraphRequestHandler:
         try:
             users = await self.api.get_all_group_members(group_id)
         except Exception as e:
-            raise MSGraphRequestHandlerError(f'Could not handle the GET Members request. Occurred {e}')
+            raise MSGraphAPIRequestHandlerError(f'Could not handle the GET Members request. Occurred {e}')
         else:
             if users is not None:
                 return [u.id for u in users]
@@ -47,16 +47,16 @@ class MSGraphRequestHandler:
         try:
             app_role_assignments = await self.api.get_app_role_assignments_for_user(user_id, application_display_name)
         except Exception as e:
-            raise MSGraphRequestHandlerError(f'Could not handle the GET AppRoleAssignment request. Occurred {e}')
+            raise MSGraphAPIRequestHandlerError(f'Could not handle the GET AppRoleAssignment request. Occurred {e}')
         else:
             if not app_role_assignments:
-                raise MSGraphRequestHandlerError(
+                raise MSGraphAPIRequestHandlerError(
                     f'Empty set, no AppRoleAssignment found for {user_id=} and {application_display_name=}'
                 )
             try:
                 app_role_assignment = next(filter(lambda x: str(x.app_role_id) == app_role_id, app_role_assignments))
             except StopIteration:
-                raise MSGraphRequestHandlerError(f'No AppRoleAssignment found for {app_role_id=}')
+                raise MSGraphAPIRequestHandlerError(f'No AppRoleAssignment found for {app_role_id=}')
             else:
                 return str(app_role_assignment.id)
 
@@ -65,7 +65,7 @@ class MSGraphRequestHandler:
         try:
             _res = await self.api.grant_app_role_assignment_to_user(user_id, app_id, app_role_id)
         except Exception as e:
-            raise MSGraphRequestHandlerError(f'Could not handle the POST AppRoleAssignment request. Occurred {e}')
+            raise MSGraphAPIRequestHandlerError(f'Could not handle the POST AppRoleAssignment request. Occurred {e}')
         else:
             time.sleep(round(random(), 2))
 
@@ -74,6 +74,6 @@ class MSGraphRequestHandler:
         try:
             _res = await self.api.delete_app_role_assignment(user_id, app_role_assignment_id)
         except Exception as e:
-            raise MSGraphRequestHandlerError(f'Could not handle the DELETE AppRoleAssignment request. Occurred {e}')
+            raise MSGraphAPIRequestHandlerError(f'Could not handle the DELETE AppRoleAssignment request. Occurred {e}')
         else:
             time.sleep(round(random(), 2))
