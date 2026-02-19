@@ -1,5 +1,5 @@
-from time import sleep
-from typing import Callable, Generator
+from asyncio import sleep
+from typing import Generator, Callable
 
 
 def backoff(attempts: int = 10, mult_factor: float = 1.5, max_sleep: float = 60.) -> Generator:
@@ -38,10 +38,10 @@ async def retry(func: Callable, args=(), kwargs={}, intervals=backoff(), logger=
     exc = None
     for i, t in enumerate(intervals, 1):
         try:
-            await func(*args, **kwargs)
+            return await func(*args, **kwargs)
         except Exception as e:
             exc = e
             if logger:
-                logger.warning(f'Retry attempt {i}: {func}(*{args}, **{kwargs}) failed: {e}')
-            sleep(t)
+                logger.warning(f'Retry attempt {i}: {func.__name__}(*{args}, **{kwargs}) failed: {e}')
+            await sleep(t)
     raise exc
