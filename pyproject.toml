@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "app-role-assignment-cli"
-version = "0.1.0"
+version = "0.1.1"
 description = "A simple CLI tool to assign AppRole to all members of a given Group in Microsoft Entra ID"
 authors = ["Stefano Messina <stefano.messina@newglobe.education>"]
 readme = "README.md"
