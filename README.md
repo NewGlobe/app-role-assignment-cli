@@ -18,9 +18,21 @@ The `app-role` command exposes two interfaces for granting and deleting an AppRo
     ```
 
 * `remove`:
-  ```
-  Usage: app-role remove [OPTIONS] APP_ROLE_DISPLAY_NAME APPLICATION_DISPLAY_NAME GROUP_DISPLAY_NAME
-  ```
+    ```
+    Usage: app-role remove [OPTIONS] APP_ROLE_DISPLAY_NAME APPLICATION_DISPLAY_NAME GROUP_DISPLAY_NAME
+    ```
+
+## Installation
+At the moment this package is not distributed. To install the package, [poetry](https://python-poetry.org/) is required.
+After cloning the repository with `git clone https://github.com/NewGlobe/app-role-assignment-cli.git` run:
+
+    poetry install
+
+Then to invoke the command, prepend them with `poetry run` e.g.:
+
+    poetry run app-role assign Viewer 'My App Defining Viewer Role' 'The Group'
+    poetry run app-role remove Viewer 'My App Defining Viewer Role' 'The Group'
+
 
 ## Running The Commands
 
