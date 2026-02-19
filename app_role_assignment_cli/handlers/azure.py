@@ -43,13 +43,21 @@ class MSGraphRequestHandler:
             if users is not None:
                 return [u.id for u in users]
 
-    async def get_app_role_assignment_id(self, user_id: str, application_display_name) -> str:
+    async def get_app_role_assignment_id(self, user_id: str, application_display_name, app_role_id: str) -> str:
         try:
-            app_role_assignment = await self.api.get_app_role_assignment_for_user(user_id, application_display_name)
+            app_role_assignments = await self.api.get_app_role_assignments_for_user(user_id, application_display_name)
         except Exception as e:
             raise MSGraphRequestHandlerError(f'Could not handle the GET AppRoleAssignment request. Occurred {e}')
         else:
-            if app_role_assignment is not None:
+            if not app_role_assignments:
+                raise MSGraphRequestHandlerError(
+                    f'Empty set, no AppRoleAssignment found for {user_id=} and {application_display_name=}'
+                )
+            try:
+                app_role_assignment = next(filter(lambda x: str(x.app_role_id) == app_role_id, app_role_assignments))
+            except StopIteration:
+                raise MSGraphRequestHandlerError(f'No AppRoleAssignment found for {app_role_id=}')
+            else:
                 return str(app_role_assignment.id)
 
     async def grant_app_role_assignment_to_user(self, user_id: str, app_id: str, app_role_id: str):

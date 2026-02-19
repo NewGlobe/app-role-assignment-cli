@@ -3,6 +3,7 @@ from uuid import UUID
 from azure.identity.aio import ClientSecretCredential
 from msgraph import GraphServiceClient
 from msgraph.generated.models.application import Application
+from msgraph.generated.models.app_role import AppRole
 from msgraph.generated.models.group import Group
 from msgraph.generated.models.user import User
 from msgraph.generated.models.app_role_assignment import AppRoleAssignment
@@ -177,9 +178,9 @@ class MSGraphAPIWrapper:
             assert len(res.value) == 1, f'More than one servicePrincipal found: {res=}'
             return res.value[0]
 
-    async def get_app_role_assignment_for_user(
+    async def get_app_role_assignments_for_user(
             self, user_id: str, resource_display_name: str
-    ) -> AppRoleAssignment | None:
+    ) -> list[AppRoleAssignment] | None:
         """
         Retrieve the appRoleAssignments of a group for a specific resource (application). The appRoleAssignment object
         holds the `resource_id` (the id of the application realizing the assignment) and the `app_role_id`, the id
@@ -206,10 +207,7 @@ class MSGraphAPIWrapper:
             logger.error(f'{e}')
         else:
             logger.info(f'Found {len(res.value)} AppRoleAssignment(s) for {resource_display_name=}')
-            app_role_assignment_user_level = [r for r in res.value if r.principal_type == 'User']
-            assert len(app_role_assignment_user_level) == 1, \
-                f'More than one User type assignment found {app_role_assignment_user_level=}'
-            return app_role_assignment_user_level[0]
+            return [r for r in res.value if r.principal_type == 'User']
 
     async def grant_app_role_assignment_to_user(
             self,
