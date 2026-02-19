@@ -3,13 +3,15 @@ from os import getenv
 import sys
 
 import click
+from msgraph.generated.models.application import Application
+from msgraph.generated.models.app_role import AppRole
 
 from .constants import CLIENT_ID, CLIENT_SECRET_VALUE, TENANT_ID
 from .env import ENVIRONMENT
 from .logging_settings import logging
 from .helpers import get_azure_credentials, get_app_role_if_exists
 from .interfaces.aws.secrets_manager import get_client
-from .interfaces.azure.msgraph_api import MSGraphAPIWrapper, Application, AppRole
+from .interfaces.azure.msgraph_api import MSGraphAPIWrapper
 from .handlers.azure import MSGraphAPIRequestHandler, MSGraphAPIRequestHandlerError
 
 logger = logging.getLogger(__name__)

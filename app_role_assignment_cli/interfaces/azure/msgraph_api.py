@@ -2,8 +2,8 @@ from uuid import UUID
 
 from azure.identity.aio import ClientSecretCredential
 from msgraph import GraphServiceClient
+from msgraph.generated.models.directory_object import DirectoryObject
 from msgraph.generated.models.application import Application
-from msgraph.generated.models.app_role import AppRole
 from msgraph.generated.models.group import Group
 from msgraph.generated.models.user import User
 from msgraph.generated.models.app_role_assignment import AppRoleAssignment
@@ -85,7 +85,7 @@ class MSGraphAPIWrapper:
             assert len(groups.value) == 1, f'Unexpected response: {groups=}'
             return groups.value[0]
 
-    async def get_all_group_members(self, group_id: str) -> list[User]:
+    async def get_all_user_group_members(self, group_id: str) -> list[User]:
         """
         Get all the id's of the members of a group (by group id).
 
@@ -95,6 +95,16 @@ class MSGraphAPIWrapper:
         Returns:
             list[str]: the list of user-principal-names of the members of the group.
         """
+        async def _extend_user_members(fetched_members: list[DirectoryObject]):
+            for member in fetched_members:
+                match member:
+                    case User():
+                        members.append(member)
+                    case Group():
+                        members.extend(await self.get_all_user_group_members(member.id))
+                    case _:
+                        logger.warning(f'Skipping {member.__class__} as not supported')
+
         query_params = MembersRequestBuilder.MembersRequestBuilderGetQueryParameters(top=999)
         request_configuration = MembersRequestBuilder.MembersRequestBuilderGetRequestConfiguration(
             query_parameters=query_params
@@ -106,8 +116,8 @@ class MSGraphAPIWrapper:
         except APIError as e:
             logger.error(f'{e}')
         else:
-            if res:
-                members.extend([r for r in res.value])
+            if res.value:
+                await _extend_user_members(res.value)
                 next_link = res.odata_next_link
                 while next_link:
                     try:
@@ -117,7 +127,7 @@ class MSGraphAPIWrapper:
                         return members
                     else:
                         next_link = next_members.odata_next_link
-                        members.extend([r for r in next_members.value])
+                        await _extend_user_members(next_members.value)
 
         return members
 

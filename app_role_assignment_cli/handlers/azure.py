@@ -36,7 +36,7 @@ class MSGraphAPIRequestHandler:
 
     async def get_all_user_ids(self, group_id: str) -> list[str]:
         try:
-            users = await self.api.get_all_group_members(group_id)
+            users = await self.api.get_all_user_group_members(group_id)
         except Exception as e:
             raise MSGraphAPIRequestHandlerError(f'Could not handle the GET Members request. Occurred {e}')
         else:
