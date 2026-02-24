@@ -10,29 +10,28 @@ To interact with Microsoft Entra ID, you'll need to create an `AppRegistration` 
 Once the app is registered, you'll need to create a Client secret (created in the "Certificates & secrets" section
 of the registered `Application`).
 
-The `app-role` command exposes two interfaces for granting and deleting an AppRoleAssignment to the users:
+The `app-role` command exposes two interfaces for granting and deleting an AppRoleAssignment to the users. Additionally,
+a third interface is exposed to execute the `assign` or `remove` flow based on configuration (YAML) files:
 
 * `assign`:
-    ```
-    Usage: app-role assign [OPTIONS] APP_ROLE_DISPLAY_NAME APPLICATION_DISPLAY_NAME GROUP_DISPLAY_NAME
+    ```commandline
+    Usage: app-role assign APP_ROLE_DISPLAY_NAME APPLICATION_DISPLAY_NAME GROUP_DISPLAY_NAME
     ```
 
 * `remove`:
+    ```commandline
+    Usage: app-role remove APP_ROLE_DISPLAY_NAME APPLICATION_DISPLAY_NAME GROUP_DISPLAY_NAME
     ```
-    Usage: app-role remove [OPTIONS] APP_ROLE_DISPLAY_NAME APPLICATION_DISPLAY_NAME GROUP_DISPLAY_NAME
-    ```
+
+* `from-config`:
+  ```commandline
+  Usage: app-role from-config ARG_CONFIG
+  ```
 
 ## Installation
-At the moment this package is not distributed. To install the package, [poetry](https://python-poetry.org/) is required.
-After cloning the repository with `git clone https://github.com/NewGlobe/app-role-assignment-cli.git` run:
+To install the latest version in your virtual environment, run:
 
-    poetry install
-
-Then to invoke the command, prepend them with `poetry run` e.g.:
-
-    poetry run app-role assign Viewer 'My App Defining Viewer Role' 'The Group'
-    poetry run app-role remove Viewer 'My App Defining Viewer Role' 'The Group'
-
+    pip install app-role-assignment-cli -U
 
 ## Running The Commands
 

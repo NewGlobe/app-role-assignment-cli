@@ -1,0 +1,4 @@
+command: 'assign'
+appRoleDisplayName: 'User'
+applicationDisplayName: 'OpenDataDiscovery Platform (UAT)'
+groupDisplayName: 'All Technology'

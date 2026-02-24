@@ -1,12 +1,22 @@
 import asyncio
 from os import getenv
 import sys
+from pathlib import Path
 
 import click
 from msgraph.generated.models.application import Application
 from msgraph.generated.models.app_role import AppRole
+from yaml import safe_load
 
-from .constants import CLIENT_ID, CLIENT_SECRET_VALUE, TENANT_ID
+from .constants import (
+    CLIENT_ID,
+    CLIENT_SECRET_VALUE,
+    TENANT_ID,
+    COMMAND,
+    APP_ROLE_DISPLAY_NAME,
+    APPLICATION_DISPLAY_NAME,
+    GROUP_DISPLAY_NAME
+)
 from .env import ENVIRONMENT
 from .logging_settings import logging
 from .helpers import get_azure_credentials, get_app_role_if_exists
@@ -55,6 +65,96 @@ def get_app_group_id_app_role_objects(
     return app, group_id, app_role
 
 
+def assign_app_role(
+    _runner: asyncio.Runner,
+    *,
+    msgraph_api_handler: MSGraphAPIRequestHandler,
+    app_role_display_name: str,
+    application_display_name: str,
+    group_display_name: str,
+):
+    """
+    Helper function for app-role assign flow.
+
+    Args:
+        _runner: an asyncio Runner instance
+        msgraph_api_handler: an MSGraphAPIRequestHandler instance
+        group_display_name: the Group displayName
+        application_display_name: the Application displayName
+        app_role_display_name: the AppRole displayName
+
+    Returns:
+        None.
+    """
+    app, group_id, app_role = get_app_group_id_app_role_objects(
+        _runner,
+        msgraph_api_handler=msgraph_api_handler,
+        group_display_name=group_display_name,
+        application_display_name=application_display_name,
+        app_role_display_name=app_role_display_name
+    )
+    service_principal = _runner.run(msgraph_api_handler.api.get_app_service_principal(app.app_id))
+    ret = _runner.run(msgraph_api_handler.get_all_user_ids(group_id))
+    for u_id in ret:
+        try:
+            _runner.run(
+                msgraph_api_handler.grant_app_role_assignment_to_user(u_id, service_principal.id, str(app_role.id))
+            )
+        except MSGraphAPIRequestHandlerError:
+            continue
+
+    logger.info(
+        f'Done with granting \'{app_role_display_name}\' defined by \'{application_display_name}\' '
+        f'to all users member of \'{group_display_name}\''
+    )
+
+
+def remove_app_role(
+    _runner: asyncio.Runner,
+    *,
+    msgraph_api_handler: MSGraphAPIRequestHandler,
+    app_role_display_name: str,
+    application_display_name: str,
+    group_display_name: str,
+):
+    """
+        Helper function for app-role remove flow.
+
+    Args:
+        _runner: an asyncio Runner instance
+        msgraph_api_handler: an MSGraphAPIRequestHandler instance
+        group_display_name: the Group displayName
+        application_display_name: the Application displayName
+        app_role_display_name: the AppRole displayName
+
+    Returns:
+        None.
+    """
+    _, group_id, app_role = get_app_group_id_app_role_objects(
+        _runner,
+        msgraph_api_handler=msgraph_api_handler,
+        group_display_name=group_display_name,
+        application_display_name=application_display_name,
+        app_role_display_name=app_role_display_name
+    )
+    ret = _runner.run(msgraph_api_handler.get_all_user_ids(group_id))
+    for u_id in ret:
+        try:
+            app_role_assignment_id = \
+                _runner.run(
+                    msgraph_api_handler.get_app_role_assignment_id(u_id, application_display_name, str(app_role.id))
+                )
+        except MSGraphAPIRequestHandlerError:
+            continue
+        else:
+            _runner.run(msgraph_api_handler.remove_app_role_assignment_from_user(u_id, app_role_assignment_id))
+
+    logger.info(
+        f'Done with removing \'{app_role_display_name}\' defined by \'{application_display_name}\' '
+        f'from all user members of \'{group_display_name}\''
+    )
+
+
 @click.group()
 def cli():
     """The app-role main interface"""
@@ -88,26 +188,12 @@ def assign(app_role_display_name: str, application_display_name: str, group_disp
 
     runner = asyncio.Runner()
 
-    app, group_id, app_role = get_app_group_id_app_role_objects(
+    assign_app_role(
         runner,
         msgraph_api_handler=msgraph_api_handler,
-        group_display_name=group_display_name,
+        app_role_display_name=app_role_display_name,
         application_display_name=application_display_name,
-        app_role_display_name=app_role_display_name
-    )
-    service_principal = runner.run(msgraph_api.get_app_service_principal(app.app_id))
-    ret = runner.run(msgraph_api_handler.get_all_user_ids(group_id))
-    for u_id in ret:
-        try:
-            runner.run(
-                msgraph_api_handler.grant_app_role_assignment_to_user(u_id, service_principal.id, str(app_role.id))
-            )
-        except MSGraphAPIRequestHandlerError:
-            continue
-
-    logger.info(
-        f'Done with granting \'{app_role_display_name}\' defined by \'{application_display_name}\' '
-        f'to all users member of \'{group_display_name}\''
+        group_display_name=group_display_name
     )
 
 
@@ -127,29 +213,63 @@ def remove(app_role_display_name: str, application_display_name: str, group_disp
 
     runner = asyncio.Runner()
 
-    _, group_id, app_role = get_app_group_id_app_role_objects(
+    remove_app_role(
         runner,
         msgraph_api_handler=msgraph_api_handler,
-        group_display_name=group_display_name,
+        app_role_display_name=app_role_display_name,
         application_display_name=application_display_name,
-        app_role_display_name=app_role_display_name
+        group_display_name=group_display_name
     )
-    ret = runner.run(msgraph_api_handler.get_all_user_ids(group_id))
-    for u_id in ret:
-        try:
-            app_role_assignment_id = \
-                runner.run(
-                    msgraph_api_handler.get_app_role_assignment_id(u_id, application_display_name, str(app_role.id))
-                )
-        except MSGraphAPIRequestHandlerError:
-            continue
-        else:
-            runner.run(msgraph_api_handler.remove_app_role_assignment_from_user(u_id, app_role_assignment_id))
+
+
+@cli.command()
+@click.argument('arg_config', type=click.Path(exists=True, readable=True))
+def from_config(arg_config: Path):
+    """
+    Infer command to be run and arguments from a YAML configuration file.
+
+    Args:
+        arg_config: the path to the configuration file holding the command and the arguments.
+
+    Returns:
+        None.
+    """
+    with open(arg_config) as f:
+        config = safe_load(f)
+
+    command, app_role_display_name, application_display_name, group_display_name = \
+        config[COMMAND], config[APP_ROLE_DISPLAY_NAME], config[APPLICATION_DISPLAY_NAME], config[GROUP_DISPLAY_NAME]
 
     logger.info(
-        f'Done with removing \'{app_role_display_name}\' defined by \'{application_display_name}\' '
-        f'from all user members of \'{group_display_name}\''
+        f'From config: {command=}, {app_role_display_name=}, {application_display_name=}, {group_display_name=}'
     )
+
+    az_creds = get_azure_credentials(get_client(), SECRET_ID)
+
+    msgraph_api = MSGraphAPIWrapper(az_creds[TENANT_ID], az_creds[CLIENT_ID], az_creds[CLIENT_SECRET_VALUE])
+    msgraph_api_handler = MSGraphAPIRequestHandler(msgraph_api)
+
+    runner = asyncio.Runner()
+
+    match command:
+        case 'assign':
+            assign_app_role(
+                runner,
+                msgraph_api_handler=msgraph_api_handler,
+                app_role_display_name=app_role_display_name,
+                application_display_name=application_display_name,
+                group_display_name=group_display_name
+            )
+        case 'remove':
+            remove_app_role(
+                runner,
+                msgraph_api_handler=msgraph_api_handler,
+                app_role_display_name=app_role_display_name,
+                application_display_name=application_display_name,
+                group_display_name=group_display_name
+            )
+        case _:
+            raise NotImplementedError(f'{command=} does not have an implemented flow')
 
 
 if __name__ == '__main__':
