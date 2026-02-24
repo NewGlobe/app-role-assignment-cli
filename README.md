@@ -27,6 +27,15 @@ a third interface is exposed to execute the `assign` or `remove` flow based on c
   ```commandline
   Usage: app-role from-config ARG_CONFIG
   ```
+The argument-configuration file needs to look like:
+
+
+```yaml
+command: 'assign'  # (or 'remove')
+appRoleDisplayName: 'Viewer'
+applicationDisplayName: 'The Application Defining Viewer'
+groupDisplayName: 'The Group Whose Members Will Get Viewer Assigned'
+```
 
 ## Installation
 To install the latest version in your virtual environment, run:
